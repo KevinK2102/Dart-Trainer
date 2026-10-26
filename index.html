@@ -1,0 +1,484 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dart Trainer</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #070786;
+      color: #f3f5f3;
+      font-family: Arial, sans-serif;
+    }
+
+    header {
+      padding: 24px;
+      background: #191e19;
+      border-bottom: 1px solid #303830;
+    }
+
+    header h1 {
+      margin: 0;
+      color: #9cff57;
+    }
+
+    header p {
+      color: #aab3aa;
+      margin-bottom: 0;
+    }
+
+    nav {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      overflow-x: auto;
+      background: #191e19;
+    }
+
+    nav button {
+      padding: 12px 16px;
+      color: white;
+      background: #292f29;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    nav button.active {
+      background: #9cff57;
+      color: #14200e;
+      font-weight: bold;
+    }
+
+    main {
+      max-width: 900px;
+      margin: auto;
+      padding: 24px;
+    }
+
+    .card {
+      background: #1b211b;
+      border: 1px solid #303830;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .score {
+      color: #9cff57;
+      font-size: 52px;
+      font-weight: bold;
+      margin: 12px 0;
+    }
+
+    button.action {
+      padding: 12px 16px;
+      background: #9cff57;
+      color: #14200e;
+      font-weight: bold;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    input, select {
+      padding: 12px;
+      margin: 6px 0;
+      max-width: 100%;
+      background: #292f29;
+      color: white;
+      border: 1px solid #485248;
+      border-radius: 8px;
+    }
+
+    .muted {
+      color: #aab3aa;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>🎯 Dart Trainer</h1>
+    <p>Trainiere smarter. Wirf besser.</p>
+  </header>
+
+  <nav>
+    <button class="active" data-page="home">Start</button>
+    <button data-page="game">501 / 301</button>
+    <button data-page="checkout">Checkout</button>
+    <button data-page="stats">Statistik</button>
+    <button data-page="players">Spieler</button>
+  </nav>
+
+  <main>
+    <section id="home">
+      <h2>Dein Training</h2>
+      <p class="muted">Willkommen bei deinem persönlichen Dart-Trainer.</p>
+
+      <div class="stats">
+        <div class="card">
+          <p class="muted">Aktiver Spieler</p>
+          <h3 id="homePlayer">Spieler 1</h3>
+        </div>
+        <div class="card">
+          <p class="muted">Gespielte Spiele</p>
+          <div class="score" id="homeGames">0</div>
+        </div>
+        <div class="card">
+          <p class="muted">Trainingsmodus</p>
+          <h3>501 / 301</h3>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Bereit für die nächste Aufnahme?</h3>
+        <p class="muted">Starte ein Spiel oder übe deine Checkouts.</p>
+        <button class="action" onclick="showPage('game')">
+          Spiel starten
+        </button>
+        <button class="action" onclick="showPage('checkout')">
+          Checkout üben
+        </button>
+      </div>
+    </section>
+
+    <section id="game" class="hidden">
+      <h2>Spielmodus</h2>
+
+      <div class="card">
+        <label for="startScore">Spiel auswählen:</label>
+        <select id="startScore">
+          <option value="501">501</option>
+          <option value="301">301</option>
+        </select>
+
+        <button class="action" onclick="startGame()">Neues Spiel</button>
+
+        <p class="muted">Aktueller Spieler</p>
+        <h3 id="gamePlayer">Spieler 1</h3>
+        <p class="muted">Restpunkte</p>
+        <div class="score" id="remaining">501</div>
+
+        <label for="throwScore">Punkte der Aufnahme (0–180):</label>
+        <br>
+        <input id="throwScore" type="number" min="0" max="180"
+          placeholder="z. B. 100">
+        <button class="action" onclick="recordThrow()">Aufnahme buchen</button>
+
+        <p id="gameMessage" aria-live="polite" class="muted">
+          Starte dein Spiel!
+        </p>
+      </div>
+    </section>
+
+    <section id="checkout" class="hidden">
+      <h2>Checkout-Trainer</h2>
+      <div class="card">
+        <p class="muted">Wie viele Punkte stehen noch?</p>
+        <input id="checkoutScore" type="number" min="2" max="170"
+          value="40">
+        <button class="action" onclick="findCheckout()">Lösung anzeigen</button>
+        <h3 id="checkoutResult">Zum Beispiel: D20</h3>
+        <p class="muted">
+          Die Vorschläge berücksichtigen zunächst ein Double-Out.
+        </p>
+      </div>
+    </section>
+
+    <section id="stats" class="hidden">
+      <h2>Deine Statistiken</h2>
+      <div class="stats">
+        <div class="card">
+          <p class="muted">Abgeschlossene Spiele</p>
+          <div class="score" id="statsGames">0</div>
+        </div>
+        <div class="card">
+          <p class="muted">Durchschnitt pro Aufnahme</p>
+          <div class="score" id="average">0</div>
+        </div>
+      </div>
+      <p class="muted">
+        Die Statistik wird im nächsten Entwicklungsschritt erweitert.
+      </p>
+    </section>
+
+    <section id="players" class="hidden">
+      <h2>Spielerprofile</h2>
+      <div class="card">
+        <label for="playerName">Neuen Spieler anlegen:</label>
+        <br>
+        <input id="playerName" maxlength="30"
+          placeholder="Spielername">
+        <button class="action" onclick="addPlayer()">Spieler hinzufügen</button>
+
+        <h3>Spielerauswahl</h3>
+        <select id="playerSelect" onchange="selectPlayer()"></select>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Daten aus dem Browser laden
+    let players = JSON.parse(
+      localStorage.getItem("dartPlayers") || '["Spieler 1"]'
+    );
+
+    let activePlayer = players[0];
+    let remaining = 501;
+    let gameStart = 501;
+    let totalScored = 0;
+    let totalVisits = 0;
+    let completedGames = 0;
+
+    function savePlayers() {
+      localStorage.setItem("dartPlayers", JSON.stringify(players));
+    }
+
+    function showPage(page) {
+      document.querySelectorAll("main section").forEach(section => {
+        section.classList.add("hidden");
+      });
+
+      document.getElementById(page).classList.remove("hidden");
+
+      document.querySelectorAll("nav button").forEach(button => {
+        button.classList.toggle("active", button.dataset.page === page);
+      });
+    }
+
+    document.querySelectorAll("nav button").forEach(button => {
+      button.addEventListener("click", () => showPage(button.dataset.page));
+    });
+
+    function updatePlayerUI() {
+      document.getElementById("homePlayer").textContent = activePlayer;
+      document.getElementById("gamePlayer").textContent = activePlayer;
+    }
+
+    function updateStats() {
+      document.getElementById("homeGames").textContent = completedGames;
+      document.getElementById("statsGames").textContent = completedGames;
+
+      const average = totalVisits
+        ? (totalScored / totalVisits).toFixed(1)
+        : "0.0";
+
+      document.getElementById("average").textContent = average;
+    }
+
+    function refreshPlayers() {
+      const select = document.getElementById("playerSelect");
+      select.innerHTML = "";
+
+      players.forEach(player => {
+        const option = document.createElement("option");
+        option.value = player;
+        option.textContent = player;
+        select.appendChild(option);
+      });
+
+      select.value = activePlayer;
+      updatePlayerUI();
+    }
+
+    function addPlayer() {
+      const input = document.getElementById("playerName");
+      const name = input.value.trim();
+
+      if (!name) {
+        alert("Bitte gib einen Spielernamen ein.");
+        return;
+      }
+
+      if (players.includes(name)) {
+        alert("Diesen Spieler gibt es bereits.");
+        return;
+      }
+
+      players.push(name);
+      activePlayer = name;
+      savePlayers();
+      refreshPlayers();
+      input.value = "";
+    }
+
+    function selectPlayer() {
+      activePlayer = document.getElementById("playerSelect").value;
+      updatePlayerUI();
+    }
+
+    function startGame() {
+      gameStart = Number(document.getElementById("startScore").value);
+      remaining = gameStart;
+
+      document.getElementById("remaining").textContent = remaining;
+      document.getElementById("gameMessage").textContent =
+        "Spiel gestartet. Viel Erfolg!";
+      document.getElementById("throwScore").value = "";
+    }
+
+    function recordThrow() {
+      const input = document.getElementById("throwScore");
+      const score = Number(input.value);
+      const message = document.getElementById("gameMessage");
+
+      if (input.value.trim() === "" ||
+          !Number.isInteger(score) || score < 0 || score > 180) {
+        message.textContent = "Bitte gib eine gültige Aufnahme von 0 bis 180 ein.";
+        return;
+      }
+
+      if (score > remaining) {
+        message.textContent = "Bust! Die Aufnahme zählt nicht.";
+        input.value = "";
+        return;
+      }
+
+      const next = remaining - score;
+
+      // Für den ersten Prototyp: Double-Out wird später
+      // anhand der einzelnen geworfenen Darts geprüft.
+      if (next === 1) {
+        message.textContent = "Bust! Ein Rest von 1 ist nicht möglich.";
+        input.value = "";
+        return;
+      }
+
+      if (next === 0) {
+        remaining = 0;
+        completedGames++;
+        totalScored += score;
+        totalVisits++;
+        document.getElementById("remaining").textContent = 0;
+        message.textContent = "Spiel gewonnen! 🎯";
+        updateStats();
+        input.value = "";
+        return;
+      }
+
+      remaining = next;
+      totalScored += score;
+      totalVisits++;
+
+      document.getElementById("remaining").textContent = remaining;
+      message.textContent = "Aufnahme verbucht. Weiter geht's!";
+      input.value = "";
+      updateStats();
+    }
+
+    const darts = [
+      { name: "T20", score: 60 },
+      { name: "T19", score: 57 },
+      { name: "T18", score: 54 },
+      { name: "T17", score: 51 },
+      { name: "T16", score: 48 },
+      { name: "T15", score: 45 },
+      { name: "T14", score: 42 },
+      { name: "T13", score: 39 },
+      { name: "T12", score: 36 },
+      { name: "T11", score: 33 },
+      { name: "T10", score: 30 },
+      { name: "T9", score: 27 },
+      { name: "T8", score: 24 },
+      { name: "T7", score: 21 },
+      { name: "T6", score: 18 },
+      { name: "T5", score: 15 },
+      { name: "T4", score: 12 },
+      { name: "T3", score: 9 },
+      { name: "T2", score: 6 },
+      { name: "T1", score: 3 }
+    ];
+
+    const doubles = Array.from({ length: 20 }, (_, i) => ({
+      name: "D" + (i + 1),
+      score: (i + 1) * 2
+    }));
+
+    doubles.push({ name: "Bull", score: 50 });
+
+    function findCheckout() {
+      const target = Number(document.getElementById("checkoutScore").value);
+      const result = document.getElementById("checkoutResult");
+
+      if (!Number.isInteger(target) || target < 2 || target > 170) {
+        result.textContent = "Bitte gib einen Wert von 2 bis 170 ein.";
+        return;
+      }
+
+      if (target === 169 || target === 168 ||
+          target === 166 || target === 165 ||
+          target === 163 || target === 162 ||
+          target === 159) {
+        result.textContent = "Mit drei Darts nicht auscheckbar.";
+        return;
+      }
+
+      const singles = [
+        ...Array.from({ length: 20 }, (_, i) => ({
+          name: "S" + (i + 1),
+          score: i + 1
+        })),
+        { name: "0", score: 0 },
+        { name: "25", score: 25 }
+      ];
+
+      const finishes = [...doubles];
+
+      // Ein-Dart-Checkout
+      for (const d of finishes) {
+        if (d.score === target) {
+          result.textContent = d.name;
+          return;
+        }
+      }
+
+      // Zwei-Dart-Checkout
+      for (const a of singles.concat(darts, doubles)) {
+        for (const b of finishes) {
+          if (a.score + b.score === target) {
+            result.textContent = a.name + " → " + b.name;
+            return;
+          }
+        }
+      }
+
+      // Drei-Dart-Checkout
+      for (const a of singles.concat(darts, doubles)) {
+        for (const b of singles.concat(darts, doubles)) {
+          for (const c of finishes) {
+            if (a.score + b.score + c.score === target) {
+              result.textContent =
+                a.name + " → " + b.name + " → " + c.name;
+              return;
+            }
+          }
+        }
+      }
+
+      result.textContent = "Kein Checkout gefunden.";
+    }
+
+    refreshPlayers();
+    updateStats();
+  </script>
+</body>
+</html>
